@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  
+  /* Additional theme fonts and colors can be added here for modern resume designs */
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Merriweather', ui-serif, Georgia, serif;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 font-sans antialiased;
+}
+
+@media print {
+  body {
+    @apply bg-white;
+  }
+}
