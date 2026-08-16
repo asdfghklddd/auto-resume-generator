@@ -1,6 +1,5 @@
 import os
 import sys
-import subprocess
 import uvicorn
 
 def main():
@@ -18,23 +17,13 @@ def main():
     frontend_dist = os.path.join(os.path.dirname(__file__), "frontend", "dist")
     
     if not os.path.exists(frontend_dist):
-        print("⚠️  Frontend is not built. Attempting to build it now...")
-        frontend_dir = os.path.join(os.path.dirname(__file__), "frontend")
-        try:
-            print("Installing npm dependencies...")
-            subprocess.run(["npm", "install"], cwd=frontend_dir, shell=True, check=True)
-            print("Building Vite project...")
-            subprocess.run(["npm", "run", "build"], cwd=frontend_dir, shell=True, check=True)
-            print("✅ Frontend build completely successfully!")
-        except Exception as e:
-            print(f"❌ Failed to build frontend: {e}")
-            print("Please ensure Node.js is installed, or build the frontend manually.")
-            sys.exit(1)
+        print("Frontend build not found. Run 'npm ci' and 'npm run build' in frontend/ first.")
+        sys.exit(1)
     
     print("✅ Starting Uvicorn API Server & Frontend Server on http://127.0.0.1:8000")
     print("="*60)
     
-    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000)
 
 if __name__ == "__main__":
     main()

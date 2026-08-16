@@ -1,6 +1,6 @@
 import os
+import json
 from google import genai
-from pydantic import ValidationError
 from .schemas import ResumeData
 
 def generate_resume_from_text(raw_text: str) -> ResumeData:
@@ -30,21 +30,15 @@ def generate_resume_from_text(raw_text: str) -> ResumeData:
     ---
     """
     
-    try:
-        response = client.models.generate_content(
-            model='gemini-2.0-flash',
-            contents=prompt,
-            config={
-                'response_mime_type': 'application/json',
-                'response_schema': ResumeData,
-                'temperature': 0.4, # Keep it professional and less creative/hallucinatory
-            },
-        )
-        # The response.text is guaranteed to be a JSON string matching the Pydantic schema
-        import json
-        json_data = json.loads(response.text)
-        return ResumeData(**json_data)
-        
-    except Exception as e:
-        print(f"Error during Gemini API call: {e}")
-        raise e
+    response = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=prompt,
+        config={
+            "response_mime_type": "application/json",
+            "response_schema": ResumeData,
+            "temperature": 0.4,
+        },
+    )
+    # Pydantic validates the provider response before it reaches the client.
+    json_data = json.loads(response.text)
+    return ResumeData(**json_data)

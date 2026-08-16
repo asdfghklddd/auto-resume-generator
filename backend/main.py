@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from dotenv import load_dotenv
 
 from .ai_service import generate_resume_from_text
@@ -20,13 +20,15 @@ gemini_semaphore = asyncio.Semaphore(1)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 class RawInputRequest(BaseModel):
-    text: str
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+
+    text: str = Field(min_length=10, max_length=20_000)
 
 @app.get("/api/health")
 async def health_check():
@@ -34,9 +36,6 @@ async def health_check():
 
 @app.post("/api/generate", response_model=ResumeData)
 async def generate_resume_endpoint(request: RawInputRequest):
-    if not request.text or len(request.text.strip()) < 10:
-        raise HTTPException(status_code=400, detail="Please provide more details in the input box.")
-        
     try:
         # Prevent overwhelming the free-tier API
         async with gemini_semaphore:
@@ -44,9 +43,9 @@ async def generate_resume_endpoint(request: RawInputRequest):
             resume_data = await asyncio.to_thread(generate_resume_from_text, request.text)
             return resume_data
     except ValueError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=503, detail="AI provider is not configured.") from e
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"AI Processing failed: {str(e)}")
+        raise HTTPException(status_code=502, detail="AI provider request failed.") from e
 
 # Serve the frontend static files if they exist
 FRONTEND_DIST = os.path.join(os.path.dirname(os.path.dirname(__file__)), "frontend", "dist")
